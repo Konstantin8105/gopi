@@ -38,12 +38,15 @@ func (s *PiService) Start() {
 				return
 			default:
 			}
-			s.m.Lock()
+			// calculate next increment
 			var next big.Float
 			next.Quo(one, new(big.Float).SetInt(s.den))
 			if minus {
 				next.Neg(&next)
 			}
+
+			// add to result
+			s.m.Lock()
 			s.result.Add(s.result, &next)
 			s.den.Add(s.den, big.NewInt(2))
 			minus = !minus
