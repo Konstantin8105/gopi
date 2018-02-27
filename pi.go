@@ -1,0 +1,69 @@
+// Calculate π by Leibniz formula
+package pi
+
+import (
+	"fmt"
+	"math/big"
+	"sync"
+)
+
+type PiService struct {
+	m           sync.Mutex
+	cStop       chan struct{}
+	iterations  *big.Int
+	result      *big.Float
+	denominator *big.Float
+}
+
+// NewService create a new service for calculate number of π(Pi)
+func NewService() *PiService {
+	return &PiService{
+		cStop:       make(chan struct{}),
+		iterations:  big.NewInt(0),
+		result:      big.NewFloat(1),
+		denominator: big.NewFloat(3),
+	}
+}
+
+// Start pi-service
+func (s *PiService) Start() {
+	one := big.NewFloat(1)
+	oneInt := big.NewInt(1)
+	go func() {
+		var minus bool = true
+		for {
+			select {
+			case <-s.cStop:
+				return
+			default:
+			}
+			s.m.Lock()
+			var next big.Float
+			next.Quo(one, s.denominator)
+			if minus {
+				s.result.Sub(s.result, &next)
+			} else {
+				s.result.Add(s.result, &next)
+			}
+			s.denominator.Add(s.denominator, big.NewFloat(2))
+			minus = !minus
+			s.m.Unlock()
+			s.iterations.Add(s.iterations, oneInt)
+		}
+	}()
+}
+
+// Result return result of calculation Pi
+func (s *PiService) Result() string {
+	s.m.Lock()
+	defer s.m.Unlock()
+	var out big.Float
+	out.Mul(s.result, big.NewFloat(4))
+	fmt.Println("iter = ", s.iterations.String())
+	return fmt.Sprintf("%s", out.String())
+}
+
+// Stop pi-service
+func (s *PiService) Stop() {
+	s.cStop <- struct{}{}
+}
