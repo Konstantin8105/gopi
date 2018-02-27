@@ -56,6 +56,8 @@ func (s *PiService) Start() {
 				if minus {
 					next.Neg(&next)
 				}
+
+				// lock for next increment
 				s.m.Lock()
 				s.iter.Add(s.iter, oneInt)
 				s.den.Add(s.den, twoInt)
