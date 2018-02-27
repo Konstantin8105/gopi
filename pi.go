@@ -53,18 +53,18 @@ func (s *PiService) Start() {
 				if minus {
 					next.Neg(&next)
 				}
+				s.m.Lock()
 				s.iter.Add(s.iter, oneInt)
-				cIncrement <- next
-				minus = !minus
 				s.den.Add(s.den, big.NewInt(2))
+				minus = !minus
+				cIncrement <- next
+				s.m.Unlock()
 			}
 		}()
 
-		// add to result
+		// add increment to result
 		for i := range cIncrement {
-			s.m.Lock()
 			s.result.Add(s.result, &i)
-			s.m.Unlock()
 		}
 	}()
 }
