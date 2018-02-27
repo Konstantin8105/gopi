@@ -10,13 +10,10 @@ import (
 func main() {
 	service := pi.NewService()
 	service.Start()
-	go func() {
-		for i := 0; i < 100; i++ {
-			time.Sleep(time.Second)
-			fmt.Println("Result :", service.Result())
-		}
-	}()
-	time.Sleep(time.Minute)
+	for i := 0; i < 60; i++ {
+		time.Sleep(time.Second)
+		fmt.Println("Result :", service.Result())
+	}
 	service.Stop()
-	fmt.Println("Result at the end :", service.Result())
+	fmt.Println("Result :", service.Result())
 }

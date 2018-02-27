@@ -108,7 +108,7 @@ func (s *Service) Result() string {
 	defer s.m.Unlock()
 	var out big.Float
 	out.Mul(s.result, big.NewFloat(4))
-	return fmt.Sprintf("%s", out.String())
+	return fmt.Sprintf("%s", out.Text('f', 62))
 }
 
 // Stop pi-service
