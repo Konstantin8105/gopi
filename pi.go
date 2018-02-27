@@ -9,11 +9,17 @@ import (
 )
 
 type PiService struct {
-	m      sync.Mutex
-	cStop  chan struct{}
-	iter   *big.Int // amount of iterations
+	m     sync.Mutex
+	cStop chan struct{}
+
+	// amount of iterations
+	iter *big.Int
+
+	// result of calculation and for infinite iteration return {pi/4}.
 	result *big.Float
-	den    *big.Int // denominator
+
+	// denominator
+	den *big.Int
 }
 
 // NewService create a new service for calculate number of π(Pi)
@@ -32,25 +38,32 @@ func (s *PiService) Start() {
 	oneInt := big.NewInt(1)
 	go func() {
 		var minus bool = true
-		for {
-			select {
-			case <-s.cStop:
-				return
-			default:
+		cIncrement := make(chan big.Float)
+		go func() {
+			defer close(cIncrement)
+			for {
+				select {
+				case <-s.cStop:
+					return
+				default:
+				}
+				// calculate next increment
+				var next big.Float
+				next.Quo(one, new(big.Float).SetInt(s.den))
+				if minus {
+					next.Neg(&next)
+				}
+				s.iter.Add(s.iter, oneInt)
+				cIncrement <- next
+				minus = !minus
+				s.den.Add(s.den, big.NewInt(2))
 			}
-			// calculate next increment
-			var next big.Float
-			next.Quo(one, new(big.Float).SetInt(s.den))
-			if minus {
-				next.Neg(&next)
-			}
-			s.iter.Add(s.iter, oneInt)
+		}()
 
-			// add to result
+		// add to result
+		for i := range cIncrement {
 			s.m.Lock()
-			s.result.Add(s.result, &next)
-			s.den.Add(s.den, big.NewInt(2))
-			minus = !minus
+			s.result.Add(s.result, &i)
 			s.m.Unlock()
 		}
 	}()
