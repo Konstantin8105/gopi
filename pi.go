@@ -31,7 +31,7 @@ func NewService() *PiService {
 var (
 	one    *big.Float = big.NewFloat(1)
 	oneInt *big.Int   = big.NewInt(1)
-	twoInt *big.Int   = big.NewInt(2)
+	two    *big.Int   = big.NewInt(2)
 )
 
 // calculate next increment
@@ -45,12 +45,12 @@ func calc(den big.Int, cIncrement chan<- *big.Float) {
 // Start pi-service
 func (s *PiService) Start() {
 	go func() {
-		var minus bool = true
+		var minus bool = false
 		cIncrement := make(chan *big.Float)
 		go func() {
 			defer close(cIncrement)
 			// denominator
-			den := *big.NewInt(3)
+			den := *big.NewInt(-3)
 			for {
 				select {
 				case <-s.cStop:
@@ -58,22 +58,23 @@ func (s *PiService) Start() {
 				default:
 				}
 
-				s.m.Lock()
-				if (minus && den.Sign() > 0) || (!minus && den.Sign() < 0) {
+				// calculation
+				calc(den, cIncrement)
+
+				// Prepare for next iteration
+				if (minus && den.Sign() > 0) ||
+					(!minus && den.Sign() < 0) {
 					den.Neg(&den)
 				}
 
-				calc(den, cIncrement)
-
 				if den.Sign() > 0 {
-					den.Add(&den, twoInt)
+					den.Add(&den, two)
 				} else {
-					den.Sub(&den, twoInt)
+					den.Sub(&den, two)
 				}
 
 				minus = !minus
 				s.iter.Add(s.iter, oneInt)
-				s.m.Unlock()
 			}
 
 		}()
