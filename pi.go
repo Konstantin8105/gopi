@@ -42,6 +42,22 @@ func (s *PiService) calc(den big.Int, cIncrement chan<- *big.Float) {
 	cIncrement <- &next
 }
 
+// Prepare for next iteration
+func (s *PiService) prepare(den *big.Int, minus *bool) {
+	if (*minus && den.Sign() > 0) ||
+		(!*minus && den.Sign() < 0) {
+		den.Neg(den)
+	}
+
+	if den.Sign() > 0 {
+		den.Add(den, two)
+	} else {
+		den.Sub(den, two)
+	}
+
+	*minus = !*minus
+}
+
 // Start pi-service
 func (s *PiService) Start() {
 	go func() {
@@ -61,19 +77,9 @@ func (s *PiService) Start() {
 				// calculation
 				s.calc(den, cIncrement)
 
-				// Prepare for next iteration
-				if (minus && den.Sign() > 0) ||
-					(!minus && den.Sign() < 0) {
-					den.Neg(&den)
-				}
+				// prepare for next iteration
+				s.prepare(&den, &minus)
 
-				if den.Sign() > 0 {
-					den.Add(&den, two)
-				} else {
-					den.Sub(&den, two)
-				}
-
-				minus = !minus
 				s.iter.Add(s.iter, oneInt)
 			}
 
