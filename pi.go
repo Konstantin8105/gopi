@@ -42,10 +42,9 @@ func (s *PiService) Start() {
 			var next big.Float
 			next.Quo(one, new(big.Float).SetInt(s.den))
 			if minus {
-				s.result.Sub(s.result, &next)
-			} else {
-				s.result.Add(s.result, &next)
+				next.Neg(next)
 			}
+			s.result.Add(s.result, &next)
 			s.den.Add(s.den, big.NewInt(2))
 			minus = !minus
 			s.m.Unlock()
