@@ -35,7 +35,7 @@ var (
 )
 
 // calculate next increment
-func calc(den big.Int, cIncrement chan<- *big.Float) {
+func (s *PiService) calc(den big.Int, cIncrement chan<- *big.Float) {
 	var next big.Float
 	next.SetInt(&den)
 	next.Quo(one, &next)
@@ -59,7 +59,7 @@ func (s *PiService) Start() {
 				}
 
 				// calculation
-				calc(den, cIncrement)
+				s.calc(den, cIncrement)
 
 				// Prepare for next iteration
 				if (minus && den.Sign() > 0) ||
