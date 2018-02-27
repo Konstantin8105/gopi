@@ -34,8 +34,11 @@ func NewService() *PiService {
 
 // Start pi-service
 func (s *PiService) Start() {
-	one := big.NewFloat(1)
-	oneInt := big.NewInt(1)
+	var (
+		one    *big.Float = big.NewFloat(1)
+		oneInt *big.Int   = big.NewInt(1)
+		twoInt *big.Int   = big.NewInt(2)
+	)
 	go func() {
 		var minus bool = true
 		cIncrement := make(chan big.Float)
@@ -55,7 +58,7 @@ func (s *PiService) Start() {
 				}
 				s.m.Lock()
 				s.iter.Add(s.iter, oneInt)
-				s.den.Add(s.den, big.NewInt(2))
+				s.den.Add(s.den, twoInt)
 				minus = !minus
 				cIncrement <- next
 				s.m.Unlock()
