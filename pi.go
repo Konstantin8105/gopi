@@ -44,6 +44,7 @@ func (s *PiService) Start() {
 			if minus {
 				next.Neg(&next)
 			}
+			s.iter.Add(s.iter, oneInt)
 
 			// add to result
 			s.m.Lock()
@@ -51,7 +52,6 @@ func (s *PiService) Start() {
 			s.den.Add(s.den, big.NewInt(2))
 			minus = !minus
 			s.m.Unlock()
-			s.iter.Add(s.iter, oneInt)
 		}
 	}()
 }
