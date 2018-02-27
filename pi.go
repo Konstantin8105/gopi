@@ -33,6 +33,7 @@ var (
 	one    = big.NewFloat(1)
 	oneInt = big.NewInt(1)
 	two    = big.NewInt(2)
+	four   = big.NewInt(4)
 )
 
 // calculate next increment
@@ -43,43 +44,51 @@ func (s *Service) calculate(den *big.Int, cIncrement chan<- *big.Float) {
 	cIncrement <- &next
 }
 
-// Prepare for next iteration
-func (s *Service) prepare(den *big.Int, minus *bool) {
-	if (*minus && den.Sign() > 0) ||
-		(!*minus && den.Sign() < 0) {
-		den.Neg(den)
-	}
-
-	if den.Sign() > 0 {
-		den.Add(den, two)
-	} else {
-		den.Sub(den, two)
-	}
-
-	*minus = !*minus
-}
-
 // Start pi-service
 func (s *Service) Start() {
-	minus := false
-	cIncrement := make(chan *big.Float)
-	den := *big.NewInt(-3)
+	amountWorkers := 10
+	cIncrement := make(chan *big.Float, amountWorkers)
+	cDen := make(chan *big.Int, amountWorkers)
+
+	// denominator
+	den := big.NewInt(-3)
 	go func() {
-		defer close(cIncrement)
-		// denominator
+		var wg sync.WaitGroup
+		for i := 0; i < amountWorkers; i++ {
+			wg.Add(1)
+			go func() {
+				for d := range cDen {
+					// Step : { 1/(-3) }
+					s.calculate(d, cIncrement)
+
+					// Step : { 1/(+5) }
+					d.Neg(d)
+					d.Add(d, two)
+					s.calculate(d, cIncrement)
+				}
+				wg.Done()
+			}()
+		}
+		go func() {
+			wg.Wait()
+			close(cIncrement)
+		}()
 		for {
 			select {
 			case <-s.cStop:
+				close(cDen)
 				return
 			default:
 			}
+			copy := new(big.Int).Set(den)
+			cDen <- den
 
-			// calculation
-			s.calculate(&den, cIncrement)
-			// prepare for next iteration
-			s.prepare(&den, &minus)
+			den = copy
+			den.Sub(den, four)
 
-			s.iter.Add(s.iter, oneInt)
+			s.m.Lock()
+			s.iter.Add(s.iter, two)
+			s.m.Unlock()
 		}
 	}()
 
