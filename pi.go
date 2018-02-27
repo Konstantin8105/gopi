@@ -1,4 +1,4 @@
-// Calculate π by Leibniz formula
+// Package pi calculate π by Leibniz formula
 // See: https://en.wikipedia.org/wiki/Leibniz_formula_for_%CF%80
 package pi
 
@@ -8,6 +8,7 @@ import (
 	"sync"
 )
 
+// PiService is base struct of calculation
 type PiService struct {
 	m     sync.Mutex
 	cStop chan struct{}
