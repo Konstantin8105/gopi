@@ -35,9 +35,9 @@ var (
 )
 
 // calculate next increment
-func (s *PiService) calculate(den big.Int, cIncrement chan<- *big.Float) {
+func (s *PiService) calculate(den *big.Int, cIncrement chan<- *big.Float) {
 	var next big.Float
-	next.SetInt(&den)
+	next.SetInt(den)
 	next.Quo(one, &next)
 	cIncrement <- &next
 }
@@ -60,32 +60,34 @@ func (s *PiService) prepare(den *big.Int, minus *bool) {
 
 // Start pi-service
 func (s *PiService) Start() {
+	var minus bool = false
+	cIncrement := make(chan *big.Float)
+	den := *big.NewInt(-3)
 	go func() {
-		var minus bool = false
-		cIncrement := make(chan *big.Float)
-		go func() {
-			defer close(cIncrement)
-			// denominator
-			den := *big.NewInt(-3)
-			for {
-				select {
-				case <-s.cStop:
-					return
-				default:
-				}
-
-				// calculation
-				s.calculate(den, cIncrement)
-				// prepare for next iteration
-				s.prepare(&den, &minus)
-
-				s.iter.Add(s.iter, oneInt)
+		defer close(cIncrement)
+		// denominator
+		for {
+			select {
+			case <-s.cStop:
+				return
+			default:
 			}
-		}()
 
+			// calculation
+			s.calculate(&den, cIncrement)
+			// prepare for next iteration
+			s.prepare(&den, &minus)
+
+			s.iter.Add(s.iter, oneInt)
+		}
+	}()
+
+	go func() {
 		// add increment to result
 		for i := range cIncrement {
+			s.m.Lock()
 			s.result.Add(s.result, i)
+			s.m.Unlock()
 		}
 	}()
 }
