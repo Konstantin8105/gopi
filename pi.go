@@ -8,8 +8,8 @@ import (
 	"sync"
 )
 
-// PiService is base struct of calculation
-type PiService struct {
+// Service is base struct of calculation
+type Service struct {
 	m     sync.Mutex
 	cStop chan struct{}
 
@@ -21,8 +21,8 @@ type PiService struct {
 }
 
 // NewService create a new service for calculate number of π(Pi)
-func NewService() *PiService {
-	return &PiService{
+func NewService() *Service {
+	return &Service{
 		cStop:  make(chan struct{}),
 		iter:   big.NewInt(0),
 		result: big.NewFloat(1),
@@ -30,13 +30,13 @@ func NewService() *PiService {
 }
 
 var (
-	one    *big.Float = big.NewFloat(1)
-	oneInt *big.Int   = big.NewInt(1)
-	two    *big.Int   = big.NewInt(2)
+	one    = big.NewFloat(1)
+	oneInt = big.NewInt(1)
+	two    = big.NewInt(2)
 )
 
 // calculate next increment
-func (s *PiService) calculate(den *big.Int, cIncrement chan<- *big.Float) {
+func (s *Service) calculate(den *big.Int, cIncrement chan<- *big.Float) {
 	var next big.Float
 	next.SetInt(den)
 	next.Quo(one, &next)
@@ -44,7 +44,7 @@ func (s *PiService) calculate(den *big.Int, cIncrement chan<- *big.Float) {
 }
 
 // Prepare for next iteration
-func (s *PiService) prepare(den *big.Int, minus *bool) {
+func (s *Service) prepare(den *big.Int, minus *bool) {
 	if (*minus && den.Sign() > 0) ||
 		(!*minus && den.Sign() < 0) {
 		den.Neg(den)
@@ -60,8 +60,8 @@ func (s *PiService) prepare(den *big.Int, minus *bool) {
 }
 
 // Start pi-service
-func (s *PiService) Start() {
-	var minus bool = false
+func (s *Service) Start() {
+	minus := false
 	cIncrement := make(chan *big.Float)
 	den := *big.NewInt(-3)
 	go func() {
@@ -94,7 +94,7 @@ func (s *PiService) Start() {
 }
 
 // Result return result of calculation Pi
-func (s *PiService) Result() string {
+func (s *Service) Result() string {
 	s.m.Lock()
 	defer s.m.Unlock()
 	var out big.Float
@@ -103,6 +103,6 @@ func (s *PiService) Result() string {
 }
 
 // Stop pi-service
-func (s *PiService) Stop() {
+func (s *Service) Stop() {
 	s.cStop <- struct{}{}
 }
