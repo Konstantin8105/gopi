@@ -1,4 +1,5 @@
 // Calculate π by Leibniz formula
+// See: https://en.wikipedia.org/wiki/Leibniz_formula_for_%CF%80
 package pi
 
 import (
@@ -12,7 +13,7 @@ type PiService struct {
 	cStop       chan struct{}
 	iterations  *big.Int
 	result      *big.Float
-	denominator *big.Float
+	denominator *big.Int
 }
 
 // NewService create a new service for calculate number of π(Pi)
@@ -21,7 +22,7 @@ func NewService() *PiService {
 		cStop:       make(chan struct{}),
 		iterations:  big.NewInt(0),
 		result:      big.NewFloat(1),
-		denominator: big.NewFloat(3),
+		denominator: big.NewInt(3),
 	}
 }
 
@@ -39,13 +40,13 @@ func (s *PiService) Start() {
 			}
 			s.m.Lock()
 			var next big.Float
-			next.Quo(one, s.denominator)
+			next.Quo(one, new(big.Float).SetInt(s.denominator))
 			if minus {
 				s.result.Sub(s.result, &next)
 			} else {
 				s.result.Add(s.result, &next)
 			}
-			s.denominator.Add(s.denominator, big.NewFloat(2))
+			s.denominator.Add(s.denominator, big.NewInt(2))
 			minus = !minus
 			s.m.Unlock()
 			s.iterations.Add(s.iterations, oneInt)
@@ -59,7 +60,6 @@ func (s *PiService) Result() string {
 	defer s.m.Unlock()
 	var out big.Float
 	out.Mul(s.result, big.NewFloat(4))
-	fmt.Println("iter = ", s.iterations.String())
 	return fmt.Sprintf("%s", out.String())
 }
 

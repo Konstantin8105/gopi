@@ -18,4 +18,5 @@ func main() {
 	}()
 	time.Sleep(10 * time.Second)
 	service.Stop()
+	fmt.Println("Result at the end :", service.Result())
 }
