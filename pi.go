@@ -9,20 +9,20 @@ import (
 )
 
 type PiService struct {
-	m           sync.Mutex
-	cStop       chan struct{}
-	iterations  *big.Int
-	result      *big.Float
-	denominator *big.Int
+	m      sync.Mutex
+	cStop  chan struct{}
+	iter   *big.Int // amount of iterations
+	result *big.Float
+	den    *big.Int // denominator
 }
 
 // NewService create a new service for calculate number of π(Pi)
 func NewService() *PiService {
 	return &PiService{
-		cStop:       make(chan struct{}),
-		iterations:  big.NewInt(0),
-		result:      big.NewFloat(1),
-		denominator: big.NewInt(3),
+		cStop:  make(chan struct{}),
+		iter:   big.NewInt(0),
+		result: big.NewFloat(1),
+		den:    big.NewInt(3),
 	}
 }
 
@@ -40,16 +40,16 @@ func (s *PiService) Start() {
 			}
 			s.m.Lock()
 			var next big.Float
-			next.Quo(one, new(big.Float).SetInt(s.denominator))
+			next.Quo(one, new(big.Float).SetInt(s.den))
 			if minus {
 				s.result.Sub(s.result, &next)
 			} else {
 				s.result.Add(s.result, &next)
 			}
-			s.denominator.Add(s.denominator, big.NewInt(2))
+			s.den.Add(s.den, big.NewInt(2))
 			minus = !minus
 			s.m.Unlock()
-			s.iterations.Add(s.iterations, oneInt)
+			s.iter.Add(s.iter, oneInt)
 		}
 	}()
 }
