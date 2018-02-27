@@ -17,9 +17,6 @@ type PiService struct {
 
 	// result of calculation and for infinite iteration return {pi/4}.
 	result *big.Float
-
-	// denominator
-	den *big.Int
 }
 
 // NewService create a new service for calculate number of π(Pi)
@@ -28,48 +25,62 @@ func NewService() *PiService {
 		cStop:  make(chan struct{}),
 		iter:   big.NewInt(0),
 		result: big.NewFloat(1),
-		den:    big.NewInt(3),
 	}
+}
+
+var (
+	one    *big.Float = big.NewFloat(1)
+	oneInt *big.Int   = big.NewInt(1)
+	twoInt *big.Int   = big.NewInt(2)
+)
+
+// calculate next increment
+func calc(den big.Int, cIncrement chan<- *big.Float) {
+	var next big.Float
+	next.SetInt(&den)
+	next.Quo(one, &next)
+	cIncrement <- &next
 }
 
 // Start pi-service
 func (s *PiService) Start() {
-	var (
-		one    *big.Float = big.NewFloat(1)
-		oneInt *big.Int   = big.NewInt(1)
-		twoInt *big.Int   = big.NewInt(2)
-	)
 	go func() {
 		var minus bool = true
-		cIncrement := make(chan big.Float)
+		cIncrement := make(chan *big.Float)
 		go func() {
 			defer close(cIncrement)
+			// denominator
+			den := *big.NewInt(3)
 			for {
 				select {
 				case <-s.cStop:
 					return
 				default:
 				}
-				// calculate next increment
-				var next big.Float
-				next.Quo(one, new(big.Float).SetInt(s.den))
-				if minus {
-					next.Neg(&next)
+
+				s.m.Lock()
+				if (minus && den.Sign() > 0) || (!minus && den.Sign() < 0) {
+					den.Neg(&den)
 				}
 
-				// lock for next increment
-				s.m.Lock()
-				s.iter.Add(s.iter, oneInt)
-				s.den.Add(s.den, twoInt)
+				calc(den, cIncrement)
+
+				if den.Sign() > 0 {
+					den.Add(&den, twoInt)
+				} else {
+					den.Sub(&den, twoInt)
+				}
+
 				minus = !minus
-				cIncrement <- next
+				s.iter.Add(s.iter, oneInt)
 				s.m.Unlock()
 			}
+
 		}()
 
 		// add increment to result
 		for i := range cIncrement {
-			s.result.Add(s.result, &i)
+			s.result.Add(s.result, i)
 		}
 	}()
 }
